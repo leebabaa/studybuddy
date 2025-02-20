@@ -13,8 +13,9 @@ function App() {
     <Router>
 
       <Routes>
-      <Route path="/yourbuddy" element={<YourBuddy />} />
       <Route path="/" element={<Layout />}>
+      <Route path="/yourbuddy" element={<YourBuddy />} />
+      
       <Route path="/courses" element={<Courses />} />
       
       <Route path="/course/:courseName" element={<CourseDescription />} />
