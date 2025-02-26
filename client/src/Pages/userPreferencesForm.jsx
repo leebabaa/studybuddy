@@ -8,6 +8,8 @@ const UserPreferencesForm = () => {
   const navigate = useNavigate();
   const [interests, setInterests] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [message, setMessage] = useState(""); // Added for feedback
+  const [loading, setLoading] = useState(false); // Added for loading state
 
   const handleCheckboxChange = (setState, value) => {
     setState((prev) =>
@@ -15,72 +17,54 @@ const UserPreferencesForm = () => {
     );
   };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   const userEmail = localStorage.getItem("userEmail"); // Get registered user email
-
-  //   if (!userEmail) {
-  //     alert("User not found. Please register again.");
-  //     return;
-  //   }
-
-  //   const preferencesData = { email: userEmail, interests, subjects };
-
-  //   try {
-  //     const response = await fetch("http://localhost:5000/api/users/preferences", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify(preferencesData),
-  //     });
-
-  //     if (response.ok) {
-  //       alert("Preferences saved successfully!");
-  //       navigate("/dashboard"); // Redirect to dashboard or recommendations page
-  //     } else {
-  //       alert("Failed to save preferences.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error:", error);
-  //     alert("An error occurred. Please try again.");
-  //   }
-  // };
   const handleSubmit = async (e) => {
     e.preventDefault();
     const userEmail = localStorage.getItem("userEmail");
-    const token = localStorage.getItem("authToken"); // ✅ Get token from localStorage
-  
+    const token = localStorage.getItem("authToken");
+
     if (!userEmail || !token) {
-      alert("User not found or not authenticated.");
+      setMessage("User not found or not authenticated.");
       return;
     }
-  
+
     const preferencesData = { email: userEmail, interests, subjects };
-  
+
+    setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/users/preferences", {
+      // Optionally save to API (uncomment and adjust endpoint if needed)
+      /*
+      const response = await fetch("http://localhost:5000/api/users/preferences/draft", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, // ✅ Send token in request headers
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(preferencesData),
       });
-  
-      if (response.ok) {
-        alert("Preferences saved successfully!");
-        navigate("/dashboard");
-      } else {
-        alert("Failed to save preferences.");
+      if (!response.ok) {
+        const data = await response.json();
+        setMessage(data.message || "Failed to save preferences.");
+        setLoading(false);
+        return;
       }
+      */
+
+      // Save to localStorage as a simple example
+      localStorage.setItem("preferencesDraft", JSON.stringify(preferencesData));
+      setMessage("Preferences saved successfully! You can continue editing or navigate to the dashboard.");
+      // Note: No navigation here, form stays open
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred. Please try again.");
+      setMessage("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
-  
+
   return (
     <div className="container mt-5">
       <h2 className="text-center">Tell Us Your Interests</h2>
+      {message && <p className="text-center mt-3">{message}</p>} {/* Simple text feedback */}
 
       <form onSubmit={handleSubmit} className="mt-4">
         <div className="mb-3">
@@ -92,6 +76,7 @@ const UserPreferencesForm = () => {
                 value={interest}
                 checked={interests.includes(interest)}
                 onChange={() => handleCheckboxChange(setInterests, interest)}
+                disabled={loading}
               />{" "}
               {interest}
             </label>
@@ -107,14 +92,15 @@ const UserPreferencesForm = () => {
                 value={subject}
                 checked={subjects.includes(subject)}
                 onChange={() => handleCheckboxChange(setSubjects, subject)}
+                disabled={loading}
               />{" "}
               {subject}
             </label>
           ))}
         </div>
 
-        <button type="submit" className="btn btn-primary w-100">
-          Save & Continue
+        <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+          {loading ? "Saving..." : "Save & Continue"}
         </button>
       </form>
     </div>

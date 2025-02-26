@@ -1,50 +1,83 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const YourBuddy = () => {
+  const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [studyGroups, setStudyGroups] = useState([]);
   const [userId, setUserId] = useState("user123"); // Replace with actual user ID
+  const [activeUsers, setActiveUsers] = useState(0); // State for active users
+  const [ws, setWs] = useState(null); // WebSocket state
 
+  // Fetch study groups and initialize WebSocket
   useEffect(() => {
+    // Fetch study groups
     fetch("http://localhost:5000/api/study-groups")
       .then((res) => res.json())
-      .then((data) => setStudyGroups(data.slice(0, 6))) // Get top 6 groups
+      .then((data) => setStudyGroups(data.slice(0, 6)))
       .catch((err) => console.error("Error fetching study groups:", err));
+
+    // Initialize WebSocket
+    const websocket = new WebSocket("ws://localhost:5000");
+    setWs(websocket);
+
+    websocket.onopen = () => {
+      console.log("Connected to WebSocket server in YourBuddy");
+    };
+
+    websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "activeUsers") {
+        setActiveUsers(data.count); // Update active users count
+      }
+    };
+
+    websocket.onclose = () => {
+      console.log("Disconnected from WebSocket server in YourBuddy");
+    };
+
+    return () => {
+      websocket.close();
+    };
   }, []);
 
   const handleJoinGroup = async (groupId) => {
-    const token = localStorage.getItem("token"); // Retrieve stored token
+    const token = localStorage.getItem("authToken");
     if (!token) {
       alert("You must be logged in to join a group.");
       return;
     }
-  
+
     try {
       const response = await fetch(`http://localhost:5000/api/study-groups/join/${groupId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Send token for authentication
+          "Authorization": `Bearer ${token}`,
         },
       });
-  
+
       if (!response.ok) throw new Error("Failed to join group");
-  
+
       const updatedGroup = await response.json();
       setStudyGroups((prevGroups) =>
         prevGroups.map((group) =>
-          group._id === groupId ? { ...updatedGroup, members: [...group.members, updatedGroup.user] } : group
+          group._id === groupId
+            ? { ...group, members: [...group.members, userId] }
+            : group
         )
       );
     } catch (error) {
       console.error("Error joining study group:", error);
+      alert("Failed to join the group. Please try again.");
     }
   };
-  
-  
-  
-  
+
+  const handleDropdownClick = (option) => {
+    navigate("/classroom", { state: { findOption: option } });
+    setDropdownOpen(false);
+  };
 
   return (
     <div
@@ -76,17 +109,35 @@ const YourBuddy = () => {
               className="dropdown-menu show p-2 border-0 shadow-lg"
               style={{ backgroundColor: "#222", color: "white", borderRadius: "5px" }}
             >
-              <li className="dropdown-item text-white">Find Random Buddy</li>
-              <li className="dropdown-item text-white">Find by Interests</li>
-              <li className="dropdown-item text-white">Find Study Group</li>
+              <li
+                className="dropdown-item text-white"
+                onClick={() => handleDropdownClick("random")}
+                style={{ cursor: "pointer" }}
+              >
+                Find Random Buddy
+              </li>
+              <li
+                className="dropdown-item text-white"
+                onClick={() => handleDropdownClick("interests")}
+                style={{ cursor: "pointer" }}
+              >
+                Find by Interests
+              </li>
+              <li
+                className="dropdown-item text-white"
+                onClick={() => handleDropdownClick("studyGroup")}
+                style={{ cursor: "pointer" }}
+              >
+                Find Study Group
+              </li>
             </ul>
           )}
         </div>
 
-        {/* Online Status */}
+        {/* Online Status with Dynamic Count */}
         <div className="d-flex align-items-center mt-2">
           <span className="text-success me-2 fs-5">🟢</span>
-          <span>Online: 5/1000</span>
+          <span>Online: {activeUsers}</span>
         </div>
       </div>
 
@@ -100,16 +151,16 @@ const YourBuddy = () => {
             <div key={group._id} className="col-md-4 mb-3">
               <div
                 className="text-center text-white p-4 rounded shadow-lg border position-relative group-container"
-                style={{ 
-                  backgroundColor: "#222", 
-                  borderColor: "#0d6efd", 
-                  height: "250px", 
-                  display: "flex", 
-                  flexDirection: "column", 
-                  justifyContent: "space-between", 
-                  alignItems: "center", 
-                  transition: "transform 0.3s", 
-                  position: "relative"
+                style={{
+                  backgroundColor: "#222",
+                  borderColor: "#0d6efd",
+                  height: "250px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  transition: "transform 0.3s",
+                  position: "relative",
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = "scale(1.05)";
@@ -140,16 +191,16 @@ const YourBuddy = () => {
                   onMouseOut={(e) => (e.target.style.backgroundColor = "#0d6efd")}
                   onClick={() => handleJoinGroup(group._id)}
                 >
-                  Join now <span className="ms-1">➡️</span>
+                  Join now <span className="ms-1">➡</span>
                 </button>
                 <div
                   className="position-absolute top-0 start-50 translate-middle-x p-1 bg-dark text-white rounded tooltip-box"
-                  style={{ 
-                    fontSize: "12px", 
-                    maxWidth: "90%", 
-                    opacity: "0", 
-                    transition: "opacity 0.3s", 
-                    pointerEvents: "none" 
+                  style={{
+                    fontSize: "12px",
+                    maxWidth: "90%",
+                    opacity: "0",
+                    transition: "opacity 0.3s",
+                    pointerEvents: "none",
                   }}
                 >
                   {group.description}

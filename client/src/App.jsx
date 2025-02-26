@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout";
+import Navbar from "./components/Navbar"; // Import the updated Navbar
 import Courses from "./Pages/Courses";
 import CourseContent from "./Pages/CourseContent";
 import CourseDescription from "./Pages/CourseDescription";
@@ -8,13 +8,14 @@ import Home from "./Pages/Home";
 import UserPreferencesForm from "./Pages/userPreferencesForm";
 import AdminDashboard from "./Pages/AdminDashboard";
 import LoginForm from "./Pages/LoginForm";
+import Classroom from "./Pages/Classroom";
 import RegistrationForm from "./Pages/RegistrationForm";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-// ✅ This component will handle user tracking (MOVED useLocation HERE)
+// NavigationTracker component for tracking user navigation
 const NavigationTracker = () => {
-  const location = useLocation(); // Now it's inside Router context
+  const location = useLocation();
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -31,26 +32,30 @@ const NavigationTracker = () => {
     }
   }, [location]);
 
-  return null; // This component only runs logic, no UI needed
+  return null; // No UI needed
 };
 
 function App() {
   return (
     <Router>
-      <NavigationTracker /> {/* ✅ Add the tracker inside Router */}
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route path="/yourbuddy" element={<YourBuddy />} />
-          <Route path="/courses" element={<Courses />} />
-          <Route path="/login" element={<LoginForm />} />
-          <Route path="/register" element={<RegistrationForm />} />
-          <Route path="/course/:courseName" element={<CourseDescription />} />
-          <Route path="/course-content/:courseName" element={<CourseContent />} />
-          <Route index element={<Home />} /> {/* Default route */}
-          <Route path="/preferences" element={<UserPreferencesForm />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        </Route>
-      </Routes>
+      <div>
+        <Navbar /> {/* Replace Layout with Navbar */}
+        <div style={{ paddingTop: "70px" }}> {/* Offset for fixed navbar */}
+          <NavigationTracker /> {/* Keep the tracker */}
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/yourbuddy" element={<YourBuddy />} />
+            <Route path="/classroom" element={<Classroom />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/register" element={<RegistrationForm />} />
+            <Route path="/course/:courseName" element={<CourseDescription />} />
+            <Route path="/course-content/:courseName" element={<CourseContent />} />
+            <Route path="/preferences" element={<UserPreferencesForm />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          </Routes>
+        </div>
+      </div>
     </Router>
   );
 }
