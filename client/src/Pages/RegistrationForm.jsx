@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./Registration.css"; // Assuming this exists and is compatible
+import "./Registration.css";
 import { useNavigate } from "react-router-dom";
 
 const RegistrationForm = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(true); // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(true);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -38,6 +38,8 @@ const RegistrationForm = () => {
       });
 
       const data = await response.json();
+      console.log("Registration response:", data); // Debug
+
       if (response.ok) {
         setMessage("Registration successful! Redirecting to login...");
         setFormData({ name: "", email: "", password: "" });
@@ -50,20 +52,18 @@ const RegistrationForm = () => {
       }
     } catch (error) {
       setMessage("Something went wrong. Please try again.");
+      console.error("Registration error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // When modal is closed (e.g., after clicking X), show nothing
   if (!isModalOpen) return null;
 
   return (
     <div className="modal-overlay active" onClick={closeModal}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-btn" onClick={closeModal}>
-          ×
-        </button>
+        <button className="close-btn" onClick={closeModal}>×</button>
         <h2 className="text-center mb-4">Register</h2>
         {message && <p className="alert alert-danger text-center">{message}</p>}
         <form onSubmit={handleSubmit}>

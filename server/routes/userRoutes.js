@@ -54,6 +54,8 @@ router.post("/users/login", async (req, res) => {
       message: "Login successful", 
       email: user.email, 
       role: user.role, 
+      userId: user._id,
+      name: user.name,
       token 
     });
   } catch (error) {
@@ -86,7 +88,8 @@ router.post("/users/preferences", authenticateUser, async (req, res) => {
 });
 
 // **Tracking Route**
-router.post("/track-navigation", authenticateUser, async (req, res) => {
+// router.post("/track-navigation", authenticateUser, async (req, res) => {
+router.post("/track-navigation", async (req, res) => {
   try {
     const { userId, page } = req.body;
 

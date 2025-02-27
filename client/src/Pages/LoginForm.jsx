@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Registration.css";
 import { useNavigate } from "react-router-dom";
+import { useWebSocket } from "../context/socketContext";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -9,25 +10,7 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(true);
   const navigate = useNavigate();
-  const [ws, setWs] = useState(null);
-
-  // Initialize WebSocket connection
-  useEffect(() => {
-    const websocket = new WebSocket("ws://localhost:5000"); // Match server port
-    setWs(websocket);
-
-    websocket.onopen = () => {
-      console.log("Connected to WebSocket server");
-    };
-
-    websocket.onclose = () => {
-      console.log("Disconnected from WebSocket server");
-    };
-
-    return () => {
-      websocket.close();
-    };
-  }, []);
+  const { ws }  = useWebSocket();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -57,17 +40,23 @@ const LoginForm = () => {
       });
 
       const data = await response.json();
+      console.log("Login response:", data);
+
+
+
       if (response.ok) {
         setMessage("Login successful!");
         localStorage.setItem("userEmail", formData.email);
         localStorage.setItem("authToken", data.token);
-        localStorage.setItem("userId", data.userId); // Store userId
+        localStorage.setItem("userId", data.userId);
+        localStorage.setItem("userName", data.name || "Anonymous");
 
-        // Notify WebSocket server of login with userId
         if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "login", userId: data.userId }));
+          const loginMessage = { type: "login", userId: data.userId };
+          console.log("Sending login message:", loginMessage);
+          ws.send(JSON.stringify(loginMessage));
         } else {
-          console.error("WebSocket not open yet");
+          console.error("WebSocket not open for login");
         }
 
         if (data.role === "admin") {
@@ -76,7 +65,7 @@ const LoginForm = () => {
           navigate("/preferences");
         }
       } else {
-        setMessage(data.message || "Invalid credentials.");
+        setMessage(data.message || "Login failed. Please check your credentials.");
       }
     } catch (error) {
       setMessage("Something went wrong. Please try again.");
